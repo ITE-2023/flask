@@ -1,0 +1,1 @@
+from .KoBERT.kobert_hf.kobert_tokenizer import KoBERTTokenizer

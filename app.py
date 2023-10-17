@@ -1,5 +1,7 @@
 from flask import Flask
 
+from model import model_call
+
 app = Flask(__name__)
 
 
@@ -9,4 +11,4 @@ def hello_world():  # put application's code here
 
 
 if __name__ == '__main__':
-    app.run()
+    model.run()
