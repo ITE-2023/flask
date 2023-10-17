@@ -1,12 +1,13 @@
 from torch.utils.data import Dataset
 import numpy as np
 import gluonnlp as nlp
+from BERTSentenceTransform import BERTSentenceTransform
 
 
 class BERTDataset(Dataset):
     def __init__(self, dataset, sent_idx, label_idx, bert_tokenizer, vocab, max_len,
                  pad, pair):
-        transform = nlp.data.BERTSentenceTransform(
+        transform = BERTSentenceTransform(
             bert_tokenizer, max_seq_length=max_len, vocab=vocab, pad=pad, pair=pair)
 
         self.sentences = [transform([i[sent_idx]]) for i in dataset]
