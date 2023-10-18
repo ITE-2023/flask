@@ -15,17 +15,25 @@ tokenizer = KoBERTTokenizer.from_pretrained('skt/kobert-base-v1')
 bertmodel, vocab = get_pytorch_kobert_model()
 
 model = BERTClassifier(bertmodel, dr_rate=0.5).to(device)
-weight = os.path.join(PATH,"model/train/model_state_dict.pt")
+weight = os.path.join(PATH,"model/train/model_state_dict_231018.pt")
 model.load_state_dict(torch.load(weight, map_location=device), strict=False)
 
 # 파라미터 설정
 max_len = 256
 batch_size = 64
 warmup_ratio = 0.1
-num_epochs = 10
+num_epochs = 5
 max_grad_norm = 1
 log_interval = 200
 learning_rate = 5e-5
+
+
+def new_softmax(a):
+    c = np.max(a)
+    exp_a = np.exp(a-c)
+    sum_exp_a = np.sum(exp_a)
+    y = (exp_a / sum_exp_a) * 100
+    return np.round(y, 3)
 
 
 def predict(predict_sentence):
@@ -47,26 +55,17 @@ def predict(predict_sentence):
         out = model(token_ids, valid_length, segment_ids)
 
         test_eval = []
-        for i in out:
-            logits = i
+        for logits in out:
             logits = logits.detach().cpu().numpy()
-            if np.argmax(logits) == 0:
-                test_eval.append("공포가")
-            elif np.argmax(logits) == 1:
-                test_eval.append("놀람이")
-            elif np.argmax(logits) == 2:
-                test_eval.append("분노가")
-            elif np.argmax(logits) == 3:
-                test_eval.append("슬픔이")
-            elif np.argmax(logits) == 4:
-                test_eval.append("중립이")
-            elif np.argmax(logits) == 5:
-                test_eval.append("행복이")
-            elif np.argmax(logits) == 6:
-                test_eval.append("혐오가")
+            logits = np.round(new_softmax(logits), 3).tolist()
+            probability = []
+            for logit in logits:
+                probability.append(np.round(logit, 3))
 
-        print(">> 입력하신 내용에서 " + test_eval[0] + " 느껴집니다.")
+            emotion = np.argmax(logits)
+            probability.append(emotion)
 
+    return probability
 
 if __name__ == "__main__":
     end = 1
@@ -74,5 +73,16 @@ if __name__ == "__main__":
         sentence = input("하고싶은 말을 입력해주세요 : ")
         if sentence == "0" :
             break
-        predict(sentence)
+
+        emotion = predict(sentence)[-1]
+        if emotion == 0:
+            print("슬픔")
+        elif emotion == 1:
+            print("공포")
+        elif emotion == 2:
+            print("분노")
+        elif emotion == 3:
+            print("놀람")
+        elif emotion == 4:
+            print("행복")
         print("\n")
