@@ -1,12 +1,13 @@
-from flask import Flask
+from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-@app.route('/sentiment')
+
+@app.route('/sentiment', methods=['POST'])
 def sentiment():
-    return {"노래 제목":"제목", "가수":"가수", "이미지": "URL"}
-
-
+    data = request.get_json()
+    sentence = data.get('sentence')
+    return jsonify({"sentence": sentence})
 
 
 if __name__ == '__main__':

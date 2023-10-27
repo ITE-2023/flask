@@ -86,3 +86,6 @@ if __name__ == "__main__":
         elif emotion == 4:
             print("행복")
         print("\n")
+
+def test(sentence):
+    return 0
