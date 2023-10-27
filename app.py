@@ -1,14 +1,13 @@
 from flask import Flask
 
-from model import model_call
-
 app = Flask(__name__)
 
+@app.route('/sentiment')
+def sentiment():
+    return {"노래 제목":"제목", "가수":"가수", "이미지": "URL"}
 
-@app.route('/')
-def hello_world():  # put application's code here
-    return 'Hello World!'
+
 
 
 if __name__ == '__main__':
-    model.run()
+    app.run(debug=True, host='0.0.0.0', port=5000)
