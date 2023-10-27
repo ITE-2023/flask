@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+from model.sentiment_call import recommend
 
 app = Flask(__name__)
 
@@ -6,8 +7,14 @@ app = Flask(__name__)
 @app.route('/sentiment', methods=['POST'])
 def sentiment():
     data = request.get_json()
-    sentence = data.get('sentence')
-    return jsonify({"sentence": sentence})
+    content = data.get('content')
+    emotion, musicList = recommend(content)
+    return jsonify(
+        {
+            "sentiment": emotion,
+            "musicList": musicList
+        }
+    )
 
 
 if __name__ == '__main__':
