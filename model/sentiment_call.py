@@ -77,23 +77,18 @@ def predict(predict_sentence):
     return probability
 
 
-def randomMusic(emotion):
-    global musicList, emotionResult
-    if emotion == 0:
+def recommend(emotion):
+    global musicList
+    if emotion == "슬픔":
         musicList = sad.sample(n=3)
-        emotionResult = "슬픔"
-    elif emotion == 1:
+    elif emotion == "공포":
         musicList = scary.sample(n=3)
-        emotionResult = "공포"
-    elif emotion == 2:
+    elif emotion == "분노":
         musicList = anger.sample(n=3)
-        emotionResult = "분노"
-    elif emotion == 3:
+    elif emotion == "놀람":
         musicList = surprised.sample(n=3)
-        emotionResult = "놀람"
-    elif emotion == 4:
+    elif emotion == "행복":
         musicList = happy.sample(n=3)
-        emotionResult = "행복"
 
     musicListResult = []
     for index, row in musicList.iterrows():
@@ -104,12 +99,21 @@ def randomMusic(emotion):
                 "imageUrl": row['앨범이미지']
             }
         )
-    return emotionResult, musicListResult
+    return musicListResult
 
 
-def recommend(content):
-    predict_content_ = predict(content)[-1]
-    return randomMusic(predict_content_)
+def getEmotion(content):
+    emotion = predict(content)[-1]
+    if emotion == 0:
+        return "슬픔"
+    elif emotion == 1:
+        return "공포"
+    elif emotion == 2:
+        return "분노"
+    elif emotion == 3:
+        return "놀람"
+    elif emotion == 4:
+        return "행복"
 
 
 if __name__ == "__main__":

@@ -1,18 +1,29 @@
 from flask import Flask, request, jsonify
-from model.sentiment_call import recommend
+from model.sentiment_call import recommend, getEmotion
 
 app = Flask(__name__)
 
 
-@app.route('/sentiment', methods=['POST'])
+@app.route('/music', methods=['POST'])
 def sentiment():
     data = request.get_json()
-    content = data.get('content')
-    emotion, musicList = recommend(content)
+    emotion = data.get('emotion')
+    musicList = recommend(emotion)
     return jsonify(
         {
-            "sentiment": emotion,
             "musicList": musicList
+        }
+    )
+
+
+@app.route('/emotion', methods=['POST'])
+def emotion():
+    data = request.get_json()
+    content = data.get('content')
+    emotion = getEmotion(content)
+    return jsonify(
+        {
+            "emotion": emotion
         }
     )
 
