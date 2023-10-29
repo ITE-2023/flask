@@ -7,6 +7,7 @@ from BERTClassifier import BERTClassifier
 from KoBERT.kobert_hf.kobert_tokenizer import KoBERTTokenizer
 from BERTDataset import BERTDataset
 
+
 PATH = os.path.abspath(__file__)[:-20]
 
 device = torch.device("cpu")
@@ -66,6 +67,8 @@ def predict(predict_sentence):
             probability.append(emotion)
 
     return probability
+
+openai_key = os.environ.get("MY_API_KEY")
 
 if __name__ == "__main__":
     end = 1
