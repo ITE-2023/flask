@@ -6,7 +6,7 @@ from KoBERT.kobert.pytorch_kobert import get_pytorch_kobert_model
 from BERTClassifier import BERTClassifier
 from KoBERT.kobert_hf.kobert_tokenizer import KoBERTTokenizer
 from BERTDataset import BERTDataset
-
+import openai
 
 PATH = os.path.abspath(__file__)[:-20]
 
@@ -68,7 +68,20 @@ def predict(predict_sentence):
 
     return probability
 
+#Getting Embeddings
 openai_key = os.environ.get("MY_API_KEY")
+def get_embedding(content,openai_key):
+    openai.api_key = openai_key
+
+    text = content
+    response = openai.Embedding.create(
+        model="text-embedding-ada-002",
+        input=text
+    )
+
+    embedding = response['data'][0]['embedding']
+
+    return embedding
 
 if __name__ == "__main__":
     end = 1
