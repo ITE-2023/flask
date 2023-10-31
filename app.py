@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-from model.sentiment_call import recommend, getEmotion
+from model.model_call import recommend, getEmotion
 
 app = Flask(__name__)
 
@@ -8,7 +8,8 @@ app = Flask(__name__)
 def sentiment():
     data = request.get_json()
     emotion = data.get('emotion')
-    musicList = recommend(emotion)
+    content = data.get('content')
+    musicList = recommend(emotion, content)
     return jsonify(
         {
             "musicList": musicList

@@ -2,10 +2,10 @@ import os
 import torch
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
-from KoBERT.kobert.pytorch_kobert import get_pytorch_kobert_model
-from BERTClassifier import BERTClassifier
-from KoBERT.kobert_hf.kobert_tokenizer import KoBERTTokenizer
-from BERTDataset import BERTDataset
+from .KoBERT.kobert.pytorch_kobert import get_pytorch_kobert_model
+from .BERTClassifier import BERTClassifier
+from .KoBERT.kobert_hf.kobert_tokenizer import KoBERTTokenizer
+from .BERTDataset import BERTDataset
 
 import openai
 import json
@@ -20,7 +20,7 @@ tokenizer = KoBERTTokenizer.from_pretrained('skt/kobert-base-v1')
 bertmodel, vocab = get_pytorch_kobert_model()
 
 model = BERTClassifier(bertmodel, dr_rate=0.5).to(device)
-weight = os.path.join(PATH,"model/train/model_state_dict_231018.pt")
+weight = os.path.join(PATH, "model/train/model_state_dict_231018.pt")
 model.load_state_dict(torch.load(weight, map_location=device), strict=False)
 
 # 파라미터 설정
@@ -32,16 +32,27 @@ max_grad_norm = 1
 log_interval = 200
 learning_rate = 5e-5
 
+openai_key = os.environ.get("MY_API_KEY")
+
+emotions = {
+    "슬픔": "sad.xlsx",
+    "공포": "scary.xlsx",
+    "분노": "anger.xlsx",
+    "놀람": "surprised.xlsx",
+    "행복": "happy.xlsx"
+}
+
 
 def new_softmax(a):
     c = np.max(a)
-    exp_a = np.exp(a-c)
+    exp_a = np.exp(a - c)
     sum_exp_a = np.sum(exp_a)
     y = (exp_a / sum_exp_a) * 100
     return np.round(y, 3)
 
 
 def predict(predict_sentence):
+    global probability
     data = [predict_sentence, '0']
     dataset_another = [data]
 
@@ -72,9 +83,8 @@ def predict(predict_sentence):
 
     return probability
 
-openai_key = os.environ.get("MY_API_KEY")
 
-#Getting Embeddings
+# Getting Embeddings
 def get_embedding(content, openai_key):
     openai.api_key = openai_key
     # JSON 데이터 생성
@@ -92,10 +102,11 @@ def get_embedding(content, openai_key):
     embedding = response['data'][0]['embedding']
     return embedding
 
-#cosine_similarity 함수
+
+# cosine_similarity 함수
 def cosineSimilarity(report_text, music_file_lyrics):
     content1 = report_text
-    #dataframe -> list 변환
+    # dataframe -> list 변환
     music_file_lyrics_list = music_file_lyrics.values.tolist()
     cosine_similarity_list = []
 
@@ -108,28 +119,55 @@ def cosineSimilarity(report_text, music_file_lyrics):
             cosine_sim = cosine_similarity([text1_embs], [text2_embs])[0][0]
             cosine_similarity_list.append([rank, cosine_sim])
 
-    #유사도를 기준으로 내림차순
+    # 유사도를 기준으로 내림차순
     cosine_similarity_list.sort(key=lambda x: -x[1])
     return cosine_similarity_list
 
+
 def music_recommend(text_sim, emotion):
     recommend_rank = text_sim[:3]
-    music_information = []
-    if emotion == 0:
-        df = pd.read_excel("dataset/sad.xlsx", usecols=["순위", "제목", "가수", "앨범이미지"])
-    elif emotion == 1:
-        df = pd.read_excel("dataset/scary.xlsx", usecols=["순위", "제목", "가수", "앨범이미지"])
-    elif emotion == 2:
-        df = pd.read_excel("dataset/anger.xlsx", usecols=["순위", "제목", "가수", "앨범이미지"])
-    elif emotion == 3:
-        df = pd.read_excel("dataset/surprised.xlsx", usecols=["순위", "제목", "가수", "앨범이미지"])
-    elif emotion == 4:
-        df = pd.read_excel("dataset/happy.xlsx", usecols=["순위", "제목", "가수", "앨범이미지"])
+    if emotion in emotions:
+        file_path = f"dataset/{emotions[emotion]}"
+        df = pd.read_excel(file_path)
+    else:
+        df = None
 
+    music_information = []
     for i in range(3):
-        x = df[df['순위'] == recommend_rank[i][0]].to_string(index=False, header=False)
-        music_information.append(x)
+        x = df[df['순위'] == recommend_rank[i][0]]
+        if not x.empty:
+            music_info_dict = {
+                "title": x['제목'].values[0],
+                "singer": x['가수'].values[0],
+                "imageUrl": x['앨범이미지'].values[0]
+            }
+            music_information.append(music_info_dict)
     return music_information
+
+def recommend(emotion, content):
+    if emotion in emotions:
+        file_path = f"dataset/{emotions[emotion]}"
+        music_file_lyrics = pd.read_excel(file_path, usecols=["순위", "가사"]).replace({np.nan: None})
+    else:
+        music_file_lyrics = None
+
+    text_sim = cosineSimilarity(content, music_file_lyrics)
+    music = music_recommend(text_sim, emotion)
+    return music
+
+
+def getEmotion(content):
+    emotion = predict(content)[-1]
+    if emotion == 0:
+        return "슬픔"
+    elif emotion == 1:
+        return "공포"
+    elif emotion == 2:
+        return "분노"
+    elif emotion == 3:
+        return "놀람"
+    elif emotion == 4:
+        return "행복"
 
 
 if __name__ == "__main__":
@@ -142,28 +180,11 @@ if __name__ == "__main__":
 
         text_sim = []
         report_text = sentence
-        emotion = predict(sentence)[-1]
-        if emotion == 0:
-            print("슬픔")
-            music_file_lyrics = pd.read_excel("dataset/sad.xlsx", usecols=["순위", "가사"]).replace({np.nan: None}) #NaN을 None으로 변환
-            text_sim = cosineSimilarity(report_text, music_file_lyrics)
-        elif emotion == 1:
-            print("공포")
-            music_file_lyrics = pd.read_excel("dataset/scary.xlsx", usecols=["순위", "가사"]).replace({np.nan: None})
-            text_sim = cosineSimilarity(report_text, music_file_lyrics)
-        elif emotion == 2:
-            print("분노")
-            music_file_lyrics = pd.read_excel("dataset/anger.xlsx", usecols=["순위", "가사"]).replace({np.nan: None})
-            text_sim = cosineSimilarity(report_text, music_file_lyrics)
-        elif emotion == 3:
-            print("놀람")
-            music_file_lyrics = pd.read_excel("dataset/surprised.xlsx", usecols=["순위", "가사"]).replace({np.nan: None})
-            text_sim = cosineSimilarity(report_text, music_file_lyrics)
-        elif emotion == 4:
-            print("행복")
-            music_file_lyrics = pd.read_excel("dataset/happy.xlsx", usecols=["순위", "가사"]).replace({np.nan: None})
-            text_sim = cosineSimilarity(report_text, music_file_lyrics)
-        print("\n")
-
+        emotion = getEmotion(sentence)
+        if emotion in emotions:
+            file_path = f"dataset/{emotions[emotion]}"
+            music_file_lyrics = pd.read_excel(file_path, usecols=["순위", "가사"]).replace({np.nan: None})
+        else:
+            music_file_lyrics = None
+        text_sim = cosineSimilarity(report_text, music_file_lyrics)
         music = music_recommend(text_sim, emotion)
-
