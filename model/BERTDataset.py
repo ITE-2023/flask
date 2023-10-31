@@ -1,7 +1,7 @@
 from torch.utils.data import Dataset
 import numpy as np
 import gluonnlp as nlp
-from BERTSentenceTransform import BERTSentenceTransform
+from .BERTSentenceTransform import BERTSentenceTransform
 
 
 class BERTDataset(Dataset):
